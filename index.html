@@ -217,6 +217,51 @@
             transform: translateY(0);
         }
 
+        .github-notice {
+            background: linear-gradient(135deg, #24292e 0%, #2f363d 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 2px solid #444;
+        }
+
+        .github-notice h4 {
+            margin: 0 0 8px 0;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .github-notice p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #e1e4e8;
+        }
+
+        .github-link {
+            display: inline-block;
+            background: #28a745;
+            color: white !important;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .github-link:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            text-decoration: none;
+            color: white !important;
+        }
+
         .solver-section {
             background: #f8f9fa;
             padding: 25px;
@@ -400,6 +445,14 @@
 <body>
     <div class="container">
         <h1>🧩 Pentomino Puzzle Challenge</h1>
+        
+        <div class="github-notice">
+            <h4>📖 Detailed Usage Instructions Available</h4>
+            <p>For comprehensive documentation, advanced features, and implementation details:</p>
+            <a href="https://github.com/nauman73/pentomino-solver" target="_blank" class="github-link">
+                📚 View on GitHub →
+            </a>
+        </div>
         
         <div class="instructions">
             <h3>📋 Instructions</h3>
