@@ -521,8 +521,12 @@
 
             <div class="stats-grid">
                 <div class="stat-item">
-                    <span class="stat-value" id="attemptsCount">0</span>
-                    <span class="stat-label">Attempts</span>
+                    <span class="stat-value" id="seedCount">-</span>
+                    <span class="stat-label">Seed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="randomnessCount">-</span>
+                    <span class="stat-label">Randomness</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-value" id="placedCount">0</span>
@@ -582,7 +586,8 @@
         let solverRunning = false;
         let solverTimeout = null;
         let solverStats = {
-            attempts: 0,
+            seed: null,
+            randomness: 50,
             placed: 0,
             backtracks: 0,
             startTime: 0,
@@ -1135,7 +1140,8 @@
             
             solverRunning = true;
             solverStats = { 
-                attempts: 0, 
+                seed: randomSeed, 
+                randomness: algorithmXRandomness,
                 placed: 0, 
                 backtracks: 0, 
                 startTime: Date.now(),
@@ -1164,7 +1170,8 @@
             const solveBtn = document.getElementById('solveBtn');
             solveBtn.textContent = solverRunning ? '⏸️ Pause' : '🚀 Start Solving';
             
-            document.getElementById('attemptsCount').textContent = solverStats.attempts;
+            document.getElementById('seedCount').textContent = solverStats.seed || '-';
+            document.getElementById('randomnessCount').textContent = solverStats.randomness + '%';
             document.getElementById('placedCount').textContent = solverStats.placed;
             document.getElementById('backtrackCount').textContent = solverStats.backtracks;
             
@@ -1630,7 +1637,6 @@
                     const updateInterval = algorithmXRandomness > 50 ? 200 : 100; // Slower updates for high randomization
                     const now = Date.now();
                     if (now - lastUpdate > updateInterval) {
-                        solverStats.attempts = depth;
                         solverStats.coverOperations = dl.operations;
                         solverStats.placed = dl.solution.length;
                         updateSolverUI();
