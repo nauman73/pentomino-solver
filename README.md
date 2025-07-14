@@ -37,7 +37,7 @@ Fit all 12 pentomino pieces into the 8×8 grid with the 2×2 center hole (60 squ
 
 ## 🚀 Live Demo
 
-[View Live Demo](https://yourusername.github.io/pentomino-solver/)
+[View Live Demo](https://nauman73.github.io/pentomino-solver/)
 
 ## 💻 Local Development
 
