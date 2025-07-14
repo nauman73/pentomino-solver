@@ -496,7 +496,7 @@
                 
                 <div class="speed-control" id="visualizationControls">
                     <label>
-                        <input type="checkbox" id="visualizationToggle" checked> Show Progress
+                        <input type="checkbox" id="visualizationToggle"> Show Progress
                     </label>
                 </div>
                 
@@ -591,7 +591,7 @@
         let solverSpeed = 50; // milliseconds between steps
         let algorithmXRandomize = true; // Whether to randomize Algorithm X
         let algorithmXRandomness = 50; // Randomness level 0-100
-        let showVisualization = true; // Whether to show solution progress
+        let showVisualization = false; // Whether to show solution progress
         let updateStats = true; // Whether to update stats during solving
         let randomSeed = null; // Seed for reproducible randomization
         
@@ -1122,6 +1122,14 @@
         function startSolver() {
             if (solverRunning) return;
             
+            // Auto-generate seed if field is empty and randomization is enabled
+            const seedInput = document.getElementById('seedInput');
+            if (algorithmXRandomize && (!seedInput.value || seedInput.value.trim() === '')) {
+                const newSeed = Math.floor(Math.random() * 999999) + 1;
+                seedInput.value = newSeed;
+                randomSeed = newSeed;
+            }
+            
             // Reset puzzle first
             resetPuzzle();
             
@@ -1398,6 +1406,12 @@
                     solverStats.coverOperations = dl.operations;
                     updateSolverUI();
                     updateSolverStatus('success', '🎉 Puzzle solved with Algorithm X + Dancing Links!');
+                    
+                    // Clear the seed field on successful completion
+                    const seedInput = document.getElementById('seedInput');
+                    seedInput.value = '';
+                    randomSeed = null;
+                    
                     return true;
                 } else {
                     solverRunning = false;
