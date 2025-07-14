@@ -9,7 +9,7 @@ An interactive pentomino puzzle solver featuring a sophisticated Algorithm X + D
 - **Real-time Visualization**: Watch the AI solve step-by-step
 - **Customizable Solving**: Adjust speed, randomization, and visualization settings
 - **Seeded Randomization**: Reproducible solving with custom seeds
-- **Performance Statistics**: Track attempts, backtracks, and cover operations
+- **Performance Statistics**: Track seed values, randomness levels, backtracks, and cover operations
 
 ## 🎮 How to Play
 
