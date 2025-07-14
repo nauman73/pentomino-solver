@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentomino Puzzle - 8x8 Grid with 2x2 Center Hole</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-area {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 40px);
+            grid-template-rows: repeat(8, 40px);
+            gap: 2px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .grid-cell {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .grid-cell.hole {
+            background: #333;
+            border: 1px solid #333;
+            cursor: default;
+        }
+
+        .grid-cell.occupied {
+            border: 2px solid #333;
+        }
+
+        .grid-cell.highlight {
+            background: #ffeb3b;
+            border-color: #ff9800;
+        }
+
+        .pieces-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pieces-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            min-width: 300px;
+        }
+
+        .piece {
+            display: grid;
+            gap: 2px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            cursor: move;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .piece:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .piece.dragging {
+            opacity: 0.7;
+            transform: rotate(5deg);
+        }
+
+        .piece-cell {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+        }
+
+        .piece-cell.filled {
+            border: 2px solid #333;
+        }
+
+        .piece-I .piece-cell.filled { background: #ff6b6b; }
+        .piece-L .piece-cell.filled { background: #4ecdc4; }
+        .piece-N .piece-cell.filled { background: #45b7d1; }
+        .piece-P .piece-cell.filled { background: #f9ca24; }
+        .piece-F .piece-cell.filled { background: #f0932b; }
+        .piece-T .piece-cell.filled { background: #eb4d4b; }
+        .piece-U .piece-cell.filled { background: #6c5ce7; }
+        .piece-V .piece-cell.filled { background: #a29bfe; }
+        .piece-W .piece-cell.filled { background: #fd79a8; }
+        .piece-X .piece-cell.filled { background: #00b894; }
+        .piece-Y .piece-cell.filled { background: #fdcb6e; }
+        .piece-Z .piece-cell.filled { background: #e84393; }
+
+        .piece-label {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .solver-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .solver-section h3 {
+            margin-top: 0;
+            color: #495057;
+            text-align: center;
+        }
+
+        .solver-section p {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .solver-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .speed-control label {
+            font-weight: bold;
+            color: #495057;
+            white-space: nowrap;
+        }
+
+        .speed-slider {
+            width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .speed-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .solver-status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .solver-status.idle {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        .solver-status.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .solver-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .solver-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .grid {
+                grid-template-columns: repeat(8, 30px);
+                grid-template-rows: repeat(8, 30px);
+            }
+            
+            .pieces-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .solver-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .speed-control {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 Pentomino Puzzle Challenge</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <p><strong>Goal:</strong> Fit all 12 pentomino pieces into the 8×8 grid with the 2×2 center hole.</p>
+            <p><strong>Controls:</strong> Drag pieces onto the grid. Right-click pieces to rotate them. Double-click pieces in the piece area to flip horizontally. Double-click placed pieces on the grid to remove them.</p>
+            <p>Each pentomino piece consists of exactly 5 connected squares. Good luck!</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="resetPuzzle()">🔄 Reset Puzzle</button>
+            <button class="btn" onclick="checkSolution()">✅ Check Solution</button>
+            <button class="btn" onclick="toggleGrid()">🔍 Toggle Grid Lines</button>
+        </div>
+
+        <div class="solver-section">
+            <h3>🤖 Automatic Solver</h3>
+            <p>Watch the AI solve the puzzle automatically using Algorithm X + Dancing Links (optimal exact cover solver)!</p>
+            <p><small><strong>Performance tip:</strong> Disable "Show Progress" and "Update Stats" for faster solving with high randomization.</small></p>
+            
+            <div class="solver-controls">
+                <button class="btn" id="solveBtn" onclick="toggleSolver()">🚀 Start Solving</button>
+                <button class="btn" onclick="stopSolver()">⏹️ Stop</button>
+                
+                <div class="speed-control">
+                    <label>Speed:</label>
+                    <input type="range" id="speedSlider" class="speed-slider" min="1" max="100" value="50">
+                    <span id="speedValue">50ms</span>
+                </div>
+                
+                <div class="speed-control" id="randomizationControls">
+                    <label>
+                        <input type="checkbox" id="randomizeToggle" checked> Randomize Algorithm X
+                    </label>
+                </div>
+                
+                <div class="speed-control" id="randomnessControl">
+                    <label>Randomness:</label>
+                    <input type="range" id="randomnessSlider" class="speed-slider" min="0" max="100" value="50">
+                    <span id="randomnessValue">50%</span>
+                </div>
+                
+                <div class="speed-control" id="visualizationControls">
+                    <label>
+                        <input type="checkbox" id="visualizationToggle" checked> Show Progress
+                    </label>
+                </div>
+                
+                <div class="speed-control" id="statsControls">
+                    <label>
+                        <input type="checkbox" id="statsToggle" checked> Update Stats
+                    </label>
+                </div>
+                
+                <div class="speed-control" id="seedControls">
+                    <label>Seed:</label>
+                    <input type="number" id="seedInput" min="1" max="999999" value="" placeholder="Random">
+                    <button class="btn" style="padding: 4px 8px; font-size: 12px;" onclick="generateNewSeed()">🎲</button>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="solver-status idle" id="solverStatus">Ready to solve</div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="attemptsCount">0</span>
+                    <span class="stat-label">Attempts</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="placedCount">0</span>
+                    <span class="stat-label">Pieces Placed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="backtrackCount">0</span>
+                    <span class="stat-label">Backtracks</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="elapsedTime">0s</span>
+                    <span class="stat-label">Time Elapsed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="extraStat">-</span>
+                    <span class="stat-label" id="extraStatLabel">Cover Ops</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="grid-container">
+                <h3>8×8 Grid (60 squares to fill)</h3>
+                <div class="grid" id="grid"></div>
+            </div>
+
+            <div class="pieces-container">
+                <h3>Pentomino Pieces</h3>
+                <div class="pieces-grid" id="pieces-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define the 12 pentomino pieces (standard shapes)
+        const pentominoes = {
+            I: [[1,1,1,1,1]], // Straight line
+            L: [[1,0,0,0],[1,1,1,1]], // L shape
+            N: [[0,1,1,1],[1,1,0,0]], // N shape
+            P: [[1,1],[1,1],[1,0]], // P shape
+            F: [[0,1,1],[1,1,0],[0,1,0]], // F shape
+            T: [[1,1,1],[0,1,0],[0,1,0]], // T shape
+            U: [[1,0,1],[1,1,1]], // U shape
+            V: [[1,0,0],[1,0,0],[1,1,1]], // V shape
+            W: [[1,0,0],[1,1,0],[0,1,1]], // W shape
+            X: [[0,1,0],[1,1,1],[0,1,0]], // X shape (plus)
+            Y: [[0,1,0,0],[1,1,0,0],[0,1,0,0],[0,1,0,0]], // Y shape
+            Z: [[1,1,0],[0,1,0],[0,1,1]] // Z shape
+        };
+
+        let gridState = Array(8).fill().map(() => Array(8).fill(null));
+        let currentDraggedPiece = null;
+        let pieceRotations = {};
+        let pieceFlipped = {};
+
+        // Solver variables
+        let solverRunning = false;
+        let solverTimeout = null;
+        let solverStats = {
+            attempts: 0,
+            placed: 0,
+            backtracks: 0,
+            startTime: 0,
+            coverOperations: 0
+        };
+        let solverSpeed = 50; // milliseconds between steps
+        let algorithmXRandomize = true; // Whether to randomize Algorithm X
+        let algorithmXRandomness = 50; // Randomness level 0-100
+        let showVisualization = true; // Whether to show solution progress
+        let updateStats = true; // Whether to update stats during solving
+        let randomSeed = null; // Seed for reproducible randomization
+        
+        // Simple seeded random number generator
+        class SeededRandom {
+            constructor(seed) {
+                this.seed = seed % 2147483647;
+                if (this.seed <= 0) this.seed += 2147483646;
+            }
+            
+            next() {
+                this.seed = this.seed * 16807 % 2147483647;
+                return (this.seed - 1) / 2147483646;
+            }
+        }
+        
+        let seededRng = null;
+
+        // Initialize the puzzle
+        function initializePuzzle() {
+            createGrid();
+            createPieces();
+            setupDragAndDrop();
+            
+            // Initialize rotation and flip states
+            Object.keys(pentominoes).forEach(name => {
+                pieceRotations[name] = 0;
+                pieceFlipped[name] = false;
+            });
+
+            // Setup solver controls
+            setupSolverControls();
+        }
+
+        function setupSolverControls() {
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            const randomizeToggle = document.getElementById('randomizeToggle');
+            const randomnessSlider = document.getElementById('randomnessSlider');
+            const randomnessValue = document.getElementById('randomnessValue');
+            const randomnessControl = document.getElementById('randomnessControl');
+            const visualizationToggle = document.getElementById('visualizationToggle');
+            const statsToggle = document.getElementById('statsToggle');
+            const seedInput = document.getElementById('seedInput');
+            
+            speedSlider.addEventListener('input', function() {
+                solverSpeed = 101 - parseInt(this.value); // Invert so higher value = faster
+                speedValue.textContent = solverSpeed + 'ms';
+            });
+            
+            randomizeToggle.addEventListener('change', function() {
+                algorithmXRandomize = this.checked;
+                randomnessControl.style.display = this.checked ? 'flex' : 'none';
+                document.getElementById('seedControls').style.display = this.checked ? 'flex' : 'none';
+            });
+            
+            randomnessSlider.addEventListener('input', function() {
+                algorithmXRandomness = parseInt(this.value);
+                randomnessValue.textContent = algorithmXRandomness + '%';
+            });
+            
+            visualizationToggle.addEventListener('change', function() {
+                showVisualization = this.checked;
+            });
+            
+            statsToggle.addEventListener('change', function() {
+                updateStats = this.checked;
+            });
+            
+            seedInput.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                randomSeed = isNaN(value) ? null : value;
+            });
+            
+            // Initialize speed display
+            solverSpeed = 101 - parseInt(speedSlider.value);
+            speedValue.textContent = solverSpeed + 'ms';
+            algorithmXRandomness = parseInt(randomnessSlider.value);
+            randomnessValue.textContent = algorithmXRandomness + '%';
+            
+            // Initialize control visibility
+            randomnessControl.style.display = algorithmXRandomize ? 'flex' : 'none';
+            document.getElementById('seedControls').style.display = algorithmXRandomize ? 'flex' : 'none';
+        }
+        
+        function generateNewSeed() {
+            const newSeed = Math.floor(Math.random() * 999999) + 1;
+            document.getElementById('seedInput').value = newSeed;
+            randomSeed = newSeed;
+        }
+        
+        // Get random number (seeded or regular)
+        function getRandom() {
+            if (seededRng) {
+                return seededRng.next();
+            }
+            return Math.random();
+        }
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Create the 2x2 hole in the center (rows 3-4, cols 3-4)
+                    if ((row >= 3 && row <= 4) && (col >= 3 && col <= 4)) {
+                        cell.classList.add('hole');
+                        gridState[row][col] = 'hole';
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function createPieces() {
+            const container = document.getElementById('pieces-container');
+            container.innerHTML = '';
+            
+            Object.entries(pentominoes).forEach(([name, shape]) => {
+                const pieceElement = createPieceElement(name, shape);
+                container.appendChild(pieceElement);
+            });
+            
+            // Re-setup event listeners for the new pieces
+            setupPieceEventListeners();
+        }
+
+        function setupPieceEventListeners() {
+            const pieces = document.querySelectorAll('.piece');
+            pieces.forEach(piece => {
+                attachEventListenersToPiece(piece);
+            });
+        }
+
+        function createPieceElement(name, shape) {
+            const piece = document.createElement('div');
+            piece.className = `piece piece-${name}`;
+            piece.dataset.name = name;
+            piece.draggable = true;
+            
+            // Calculate grid size for the piece
+            const rows = shape.length;
+            const cols = Math.max(...shape.map(row => row.length));
+            
+            piece.style.gridTemplateColumns = `repeat(${cols}, 25px)`;
+            piece.style.gridTemplateRows = `repeat(${rows}, 25px)`;
+            
+            // Create cells for the piece
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'piece-cell';
+                    if (shape[row] && shape[row][col]) {
+                        cell.classList.add('filled');
+                    }
+                    piece.appendChild(cell);
+                }
+            }
+            
+            // Add label
+            const label = document.createElement('div');
+            label.className = 'piece-label';
+            label.textContent = name;
+            piece.appendChild(label);
+            
+            return piece;
+        }
+
+        function setupDragAndDrop() {
+            setupPieceEventListeners();
+            
+            const gridCells = document.querySelectorAll('.grid-cell');
+            gridCells.forEach(cell => {
+                cell.addEventListener('dragover', handleDragOver);
+                cell.addEventListener('drop', handleDrop);
+                cell.addEventListener('dragenter', handleDragEnter);
+                cell.addEventListener('dragleave', handleDragLeave);
+                cell.addEventListener('dblclick', handleGridCellDoubleClick);
+            });
+        }
+
+        function handleDragStart(e) {
+            // Get the piece element (in case the drag started on a child element)
+            const pieceElement = e.target.closest('.piece');
+            if (pieceElement) {
+                currentDraggedPiece = pieceElement;
+                pieceElement.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        }
+
+        function handleDragEnd(e) {
+            const pieceElement = e.target.closest('.piece');
+            if (pieceElement) {
+                pieceElement.classList.remove('dragging');
+            }
+            currentDraggedPiece = null;
+            clearHighlights();
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            if (currentDraggedPiece && !e.target.classList.contains('hole')) {
+                e.target.classList.add('highlight');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.target.classList.remove('highlight');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            clearHighlights();
+            
+            if (!currentDraggedPiece) return;
+            
+            const targetCell = e.target;
+            if (targetCell.classList.contains('hole')) return;
+            
+            const row = parseInt(targetCell.dataset.row);
+            const col = parseInt(targetCell.dataset.col);
+            const pieceName = currentDraggedPiece.dataset.name;
+            
+            if (canPlacePiece(pieceName, row, col)) {
+                placePiece(pieceName, row, col);
+                currentDraggedPiece.style.display = 'none';
+            }
+        }
+
+        function handleRightClick(e) {
+            e.preventDefault();
+            const pieceElement = e.target.closest('.piece');
+            if (pieceElement && pieceElement.style.display !== 'none') {
+                const pieceName = pieceElement.dataset.name;
+                rotatePiece(pieceName);
+            }
+        }
+
+        function handleDoubleClick(e) {
+            const pieceElement = e.target.closest('.piece');
+            if (pieceElement && pieceElement.style.display !== 'none') {
+                const pieceName = pieceElement.dataset.name;
+                flipPiece(pieceName);
+            }
+        }
+
+        function handleGridCellDoubleClick(e) {
+            const cell = e.target;
+            if (cell.classList.contains('occupied')) {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                const pieceName = gridState[row][col];
+                
+                if (pieceName && pieceName !== 'hole') {
+                    removePieceFromGrid(pieceName);
+                }
+            }
+        }
+
+        function rotatePiece(pieceName) {
+            pieceRotations[pieceName] = (pieceRotations[pieceName] + 90) % 360;
+            updatePieceDisplay(pieceName);
+        }
+
+        function flipPiece(pieceName) {
+            pieceFlipped[pieceName] = !pieceFlipped[pieceName];
+            updatePieceDisplay(pieceName);
+        }
+
+        function updatePieceDisplay(pieceName) {
+            const pieceElement = document.querySelector(`.piece[data-name="${pieceName}"]`);
+            if (!pieceElement || pieceElement.style.display === 'none') return;
+            
+            let shape = getTransformedShape(pieceName);
+            
+            // Clear existing cells (except label)
+            const cells = pieceElement.querySelectorAll('.piece-cell');
+            cells.forEach(cell => cell.remove());
+            
+            // Recreate cells with new shape
+            const rows = shape.length;
+            const cols = Math.max(...shape.map(row => row.length));
+            
+            pieceElement.style.gridTemplateColumns = `repeat(${cols}, 25px)`;
+            pieceElement.style.gridTemplateRows = `repeat(${rows}, 25px)`;
+            
+            // Insert cells before the label
+            const label = pieceElement.querySelector('.piece-label');
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'piece-cell';
+                    if (shape[row] && shape[row][col]) {
+                        cell.classList.add('filled');
+                    }
+                    pieceElement.insertBefore(cell, label);
+                }
+            }
+        }
+
+        function getTransformedShape(pieceName) {
+            let shape = JSON.parse(JSON.stringify(pentominoes[pieceName])); // Deep copy
+            
+            // Apply rotations
+            const rotations = pieceRotations[pieceName] / 90;
+            for (let i = 0; i < rotations; i++) {
+                shape = rotateMatrix90(shape);
+            }
+            
+            // Apply flip
+            if (pieceFlipped[pieceName]) {
+                shape = shape.map(row => row.slice().reverse());
+            }
+            
+            return shape;
+        }
+
+        function rotateMatrix90(matrix) {
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            const rotated = Array(cols).fill().map(() => Array(rows).fill(0));
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    rotated[j][rows - 1 - i] = matrix[i][j];
+                }
+            }
+            
+            return rotated;
+        }
+
+        function canPlacePiece(pieceName, startRow, startCol) {
+            const shape = getTransformedShape(pieceName);
+            
+            for (let row = 0; row < shape.length; row++) {
+                for (let col = 0; col < shape[row].length; col++) {
+                    if (shape[row][col]) {
+                        const gridRow = startRow + row;
+                        const gridCol = startCol + col;
+                        
+                        // Check bounds
+                        if (gridRow < 0 || gridRow >= 8 || gridCol < 0 || gridCol >= 8) {
+                            return false;
+                        }
+                        
+                        // Check if cell is occupied or is a hole
+                        if (gridState[gridRow][gridCol] !== null) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            
+            return true;
+        }
+
+        function placePiece(pieceName, startRow, startCol) {
+            const shape = getTransformedShape(pieceName);
+            
+            for (let row = 0; row < shape.length; row++) {
+                for (let col = 0; col < shape[row].length; col++) {
+                    if (shape[row][col]) {
+                        const gridRow = startRow + row;
+                        const gridCol = startCol + col;
+                        
+                        gridState[gridRow][gridCol] = pieceName;
+                        
+                        const cell = document.querySelector(`[data-row="${gridRow}"][data-col="${gridCol}"]`);
+                        cell.classList.add('occupied');
+                        cell.style.backgroundColor = getComputedStyle(document.querySelector(`.piece-${pieceName} .piece-cell.filled`)).backgroundColor;
+                        cell.textContent = pieceName;
+                        cell.style.color = 'white';
+                        cell.style.fontWeight = 'bold';
+                        cell.style.fontSize = '12px';
+                        cell.style.display = 'flex';
+                        cell.style.alignItems = 'center';
+                        cell.style.justifyContent = 'center';
+                    }
+                }
+            }
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.grid-cell.highlight').forEach(cell => {
+                cell.classList.remove('highlight');
+            });
+        }
+
+        function removePieceFromGrid(pieceName) {
+            // Clear the piece from the grid state and display
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (gridState[row][col] === pieceName) {
+                        gridState[row][col] = null;
+                        
+                        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                        cell.classList.remove('occupied');
+                        cell.style.backgroundColor = '';
+                        cell.textContent = '';
+                        cell.style.color = '';
+                        cell.style.fontWeight = '';
+                        cell.style.fontSize = '';
+                        cell.style.display = '';
+                        cell.style.alignItems = '';
+                        cell.style.justifyContent = '';
+                    }
+                }
+            }
+            
+            // Reset the piece to its original state (no rotation or flip)
+            pieceRotations[pieceName] = 0;
+            pieceFlipped[pieceName] = false;
+            
+            // Remove the old piece element and create a fresh one
+            const oldPieceElement = document.querySelector(`.piece[data-name="${pieceName}"]`);
+            if (oldPieceElement) {
+                const container = oldPieceElement.parentNode;
+                oldPieceElement.remove();
+                
+                // Create a fresh piece element with original shape
+                const originalShape = pentominoes[pieceName];
+                const newPieceElement = createPieceElement(pieceName, originalShape);
+                
+                // Insert it back in the same position
+                container.appendChild(newPieceElement);
+                
+                // Attach event listeners to the new piece
+                attachEventListenersToPiece(newPieceElement);
+            }
+        }
+
+        function attachEventListenersToPiece(pieceElement) {
+            // Remove existing listeners to avoid duplicates
+            pieceElement.removeEventListener('dragstart', handleDragStart);
+            pieceElement.removeEventListener('dragend', handleDragEnd);
+            pieceElement.removeEventListener('contextmenu', handleRightClick);
+            pieceElement.removeEventListener('dblclick', handleDoubleClick);
+            
+            // Add fresh listeners
+            pieceElement.addEventListener('dragstart', handleDragStart);
+            pieceElement.addEventListener('dragend', handleDragEnd);
+            pieceElement.addEventListener('contextmenu', handleRightClick);
+            pieceElement.addEventListener('dblclick', handleDoubleClick);
+        }
+
+        function resetPuzzle() {
+            // Reset grid state
+            gridState = Array(8).fill().map(() => Array(8).fill(null));
+            
+            // Reset grid display
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                
+                cell.classList.remove('occupied');
+                cell.style.backgroundColor = '';
+                cell.textContent = '';
+                cell.style.color = '';
+                cell.style.fontWeight = '';
+                cell.style.fontSize = '';
+                cell.style.display = '';
+                cell.style.alignItems = '';
+                cell.style.justifyContent = '';
+                
+                if ((row >= 3 && row <= 4) && (col >= 3 && col <= 4)) {
+                    cell.classList.add('hole');
+                    gridState[row][col] = 'hole';
+                } else {
+                    cell.classList.remove('hole');
+                }
+            });
+            
+            // Reset rotations and flips
+            Object.keys(pentominoes).forEach(name => {
+                pieceRotations[name] = 0;
+                pieceFlipped[name] = false;
+            });
+            
+            // Recreate all pieces fresh
+            createPieces();
+        }
+
+        function checkSolution() {
+            let filledCells = 0;
+            let expectedCells = 60; // 64 total - 4 hole cells = 60
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (gridState[row][col] && gridState[row][col] !== 'hole') {
+                        filledCells++;
+                    }
+                }
+            }
+            
+            if (filledCells === expectedCells) {
+                alert('🎉 Congratulations! You solved the pentomino puzzle! 🎉');
+            } else {
+                alert(`You have filled ${filledCells} out of ${expectedCells} cells. Keep going!`);
+            }
+        }
+
+        function toggleGrid() {
+            const grid = document.getElementById('grid');
+            grid.style.gap = grid.style.gap === '0px' ? '2px' : '0px';
+        }
+
+        // Solver Functions
+        function toggleSolver() {
+            if (solverRunning) {
+                stopSolver();
+            } else {
+                startSolver();
+            }
+        }
+
+        function startSolver() {
+            if (solverRunning) return;
+            
+            // Reset puzzle first
+            resetPuzzle();
+            
+            solverRunning = true;
+            solverStats = { 
+                attempts: 0, 
+                placed: 0, 
+                backtracks: 0, 
+                startTime: Date.now(),
+                coverOperations: 0
+            };
+            
+            updateSolverUI();
+            updateSolverStatus('running', 'Solving puzzle using Algorithm X + Dancing Links...');
+            
+            // Start Algorithm X solver
+            solveAlgorithmX();
+        }
+
+        function stopSolver() {
+            solverRunning = false;
+            if (solverTimeout) {
+                clearTimeout(solverTimeout);
+                solverTimeout = null;
+            }
+            
+            updateSolverUI();
+            updateSolverStatus('idle', 'Solver stopped');
+        }
+
+        function updateSolverUI() {
+            const solveBtn = document.getElementById('solveBtn');
+            solveBtn.textContent = solverRunning ? '⏸️ Pause' : '🚀 Start Solving';
+            
+            document.getElementById('attemptsCount').textContent = solverStats.attempts;
+            document.getElementById('placedCount').textContent = solverStats.placed;
+            document.getElementById('backtrackCount').textContent = solverStats.backtracks;
+            
+            const elapsed = solverStats.startTime ? Math.floor((Date.now() - solverStats.startTime) / 1000) : 0;
+            document.getElementById('elapsedTime').textContent = elapsed + 's';
+            
+            const progress = (solverStats.placed / 12) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // Update cover operations stat for Algorithm X
+            const extraStat = document.getElementById('extraStat');
+            extraStat.textContent = solverStats.coverOperations || 0;
+        }
+
+        function updateSolverStatus(type, message) {
+            const status = document.getElementById('solverStatus');
+            status.className = `solver-status ${type}`;
+            status.textContent = message;
+        }
+
+        // Algorithm X with Dancing Links Implementation
+        class DancingLinksNode {
+            constructor(row = -1, col = -1) {
+                this.left = this;
+                this.right = this;
+                this.up = this;
+                this.down = this;
+                this.header = null;
+                this.row = row;
+                this.col = col;
+                this.size = 0; // Only used for header nodes
+            }
+        }
+
+        class DancingLinks {
+            constructor(matrix) {
+                this.header = new DancingLinksNode();
+                this.solution = [];
+                this.solutions = [];
+                this.operations = 0;
+                this.buildMatrix(matrix);
+            }
+
+            buildMatrix(matrix) {
+                if (!matrix || matrix.length === 0) return;
+                
+                const numCols = matrix[0].length;
+                const headers = [];
+                
+                // Create column headers
+                for (let col = 0; col < numCols; col++) {
+                    const header = new DancingLinksNode(-1, col);
+                    headers.push(header);
+                    
+                    // Link headers horizontally
+                    if (col === 0) {
+                        this.header.right = header;
+                        header.left = this.header;
+                    } else {
+                        headers[col - 1].right = header;
+                        header.left = headers[col - 1];
+                    }
+                }
+                
+                // Close the horizontal chain
+                if (headers.length > 0) {
+                    headers[headers.length - 1].right = this.header;
+                    this.header.left = headers[headers.length - 1];
+                }
+                
+                // Create nodes for matrix entries
+                for (let row = 0; row < matrix.length; row++) {
+                    let prev = null;
+                    let first = null;
+                    
+                    for (let col = 0; col < numCols; col++) {
+                        if (matrix[row][col] === 1) {
+                            const node = new DancingLinksNode(row, col);
+                            node.header = headers[col];
+                            
+                            // Link horizontally
+                            if (prev) {
+                                prev.right = node;
+                                node.left = prev;
+                            } else {
+                                first = node;
+                            }
+                            prev = node;
+                            
+                            // Link vertically
+                            const header = headers[col];
+                            node.down = header;
+                            node.up = header.up;
+                            header.up.down = node;
+                            header.up = node;
+                            header.size++;
+                        }
+                    }
+                    
+                    // Close horizontal chain for this row
+                    if (first && prev) {
+                        first.left = prev;
+                        prev.right = first;
+                    }
+                }
+            }
+
+            selectColumnHeuristic() {
+                let minSize = Infinity;
+                let selectedCol = null;
+                let candidateCols = [];
+                
+                // Find the minimum size
+                for (let col = this.header.right; col !== this.header; col = col.right) {
+                    if (col.size < minSize) {
+                        minSize = col.size;
+                        selectedCol = col;
+                        candidateCols = [col]; // Reset candidates with new minimum
+                    } else if (col.size === minSize) {
+                        candidateCols.push(col); // Add to candidates with same minimum size
+                    }
+                }
+                
+                // Apply randomization to column selection if enabled
+                if (algorithmXRandomize && algorithmXRandomness > 0 && candidateCols.length > 1) {
+                    const randomizationStrength = algorithmXRandomness / 100.0;
+                    
+                    // Choose randomly among columns with minimum size based on randomness level
+                    if (getRandom() < randomizationStrength) {
+                        const randomIndex = Math.floor(getRandom() * candidateCols.length);
+                        selectedCol = candidateCols[randomIndex];
+                    }
+                }
+                
+                return selectedCol;
+            }
+
+            cover(col) {
+                this.operations++;
+                
+                // Remove column header from the list
+                col.left.right = col.right;
+                col.right.left = col.left;
+                
+                // Remove all rows in this column's list
+                for (let row = col.down; row !== col; row = row.down) {
+                    for (let node = row.right; node !== row; node = node.right) {
+                        node.up.down = node.down;
+                        node.down.up = node.up;
+                        node.header.size--;
+                    }
+                }
+            }
+
+            uncover(col) {
+                // Restore all rows in this column's list
+                for (let row = col.up; row !== col; row = row.up) {
+                    for (let node = row.left; node !== row; node = node.left) {
+                        node.header.size++;
+                        node.up.down = node;
+                        node.down.up = node;
+                    }
+                }
+                
+                // Restore column header to the list
+                col.left.right = col;
+                col.right.left = col;
+            }
+
+            search(level = 0) {
+                if (this.header.right === this.header) {
+                    // Found a solution
+                    this.solutions.push([...this.solution]);
+                    return true;
+                }
+                
+                const col = this.selectColumnHeuristic();
+                if (!col || col.size === 0) {
+                    return false;
+                }
+                
+                this.cover(col);
+                
+                for (let row = col.down; row !== col; row = row.down) {
+                    this.solution.push(row.row);
+                    
+                    // Cover all other columns in this row
+                    for (let node = row.right; node !== row; node = node.right) {
+                        this.cover(node.header);
+                    }
+                    
+                    if (this.search(level + 1)) {
+                        return true;
+                    }
+                    
+                    // Backtrack
+                    this.solution.pop();
+                    
+                    // Uncover all columns in this row
+                    for (let node = row.left; node !== row; node = node.left) {
+                        this.uncover(node.header);
+                    }
+                }
+                
+                this.uncover(col);
+                return false;
+            }
+        }
+
+        async function solveAlgorithmX() {
+            try {
+                // Initialize seeded random number generator if seed is provided
+                if (algorithmXRandomize && randomSeed !== null) {
+                    seededRng = new SeededRandom(randomSeed);
+                    console.log(`Using seed: ${randomSeed}`);
+                } else {
+                    seededRng = null;
+                }
+                
+                // Convert pentomino puzzle to exact cover matrix
+                const { matrix, placements } = createExactCoverMatrix();
+                
+                if (!matrix || matrix.length === 0) {
+                    solverRunning = false;
+                    updateSolverStatus('failed', '❌ Failed to create exact cover matrix');
+                    updateSolverUI();
+                    return false;
+                }
+                
+                // Create Dancing Links instance
+                const dl = new DancingLinks(matrix);
+                
+                // Solve with visualization
+                const result = await searchWithVisualization(dl, placements);
+                
+                if (result) {
+                    solverRunning = false;
+                    // Final stats update
+                    solverStats.coverOperations = dl.operations;
+                    updateSolverUI();
+                    updateSolverStatus('success', '🎉 Puzzle solved with Algorithm X + Dancing Links!');
+                    return true;
+                } else {
+                    solverRunning = false;
+                    // Final stats update
+                    solverStats.coverOperations = dl.operations;
+                    updateSolverUI();
+                    // Check if we hit timeout vs no solution
+                    const elapsed = Date.now() - solverStats.startTime;
+                    const maxRuntime = algorithmXRandomness > 50 ? 60000 : 120000;
+                    if (elapsed > maxRuntime * 0.9) { // Close to timeout
+                        updateSolverStatus('failed', '⏰ Solver timed out - try lower randomization or different settings');
+                    } else {
+                        updateSolverStatus('failed', '❌ Algorithm X found no solution');
+                    }
+                    return false;
+                }
+            } catch (error) {
+                console.error('Algorithm X error:', error);
+                solverRunning = false;
+                updateSolverStatus('failed', '❌ Algorithm X encountered an error');
+                updateSolverUI();
+                return false;
+            }
+        }
+
+        function createExactCoverMatrix() {
+            const pieces = Object.keys(pentominoes);
+            const placements = [];
+            const cellConstraints = new Map();
+            
+            // Randomize piece processing order if randomization is enabled
+            if (algorithmXRandomize && algorithmXRandomness > 0) {
+                const randomizationStrength = algorithmXRandomness / 100.0;
+                if (randomizationStrength > 0.2) {
+                    // Shuffle the pieces array for more diverse exploration
+                    for (let i = pieces.length - 1; i > 0; i--) {
+                        if (getRandom() < randomizationStrength) {
+                            const j = Math.floor(getRandom() * (i + 1));
+                            [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+                        }
+                    }
+                }
+            }
+            
+            // Map each non-hole cell to a constraint index
+            let constraintIndex = 0;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (!((row >= 3 && row <= 4) && (col >= 3 && col <= 4))) {
+                        cellConstraints.set(`${row},${col}`, constraintIndex++);
+                    }
+                }
+            }
+            
+            // Add piece constraints (each piece must be used exactly once)
+            const pieceConstraints = new Map();
+            pieces.forEach((piece, index) => {
+                pieceConstraints.set(piece, constraintIndex++);
+            });
+            
+            const totalConstraints = constraintIndex;
+            
+            // Generate all possible placements with randomized exploration order
+            const rotationOrder = [0, 1, 2, 3];
+            const flipOrder = [0, 1];
+            
+            // Randomize rotation and flip exploration order
+            if (algorithmXRandomize && algorithmXRandomness > 30) {
+                const randomizationStrength = algorithmXRandomness / 100.0;
+                
+                // Shuffle rotation order
+                if (getRandom() < randomizationStrength) {
+                    for (let i = rotationOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(getRandom() * (i + 1));
+                        [rotationOrder[i], rotationOrder[j]] = [rotationOrder[j], rotationOrder[i]];
+                    }
+                }
+                
+                // Shuffle flip order
+                if (getRandom() < randomizationStrength) {
+                    [flipOrder[0], flipOrder[1]] = [flipOrder[1], flipOrder[0]];
+                }
+            }
+            
+            for (const pieceName of pieces) {
+                for (const rotation of rotationOrder) {
+                    for (const flipped of flipOrder) {
+                        pieceRotations[pieceName] = rotation * 90;
+                        pieceFlipped[pieceName] = flipped === 1;
+                        
+                        // Create randomized grid exploration pattern
+                        const gridPositions = [];
+                        for (let row = 0; row < 8; row++) {
+                            for (let col = 0; col < 8; col++) {
+                                gridPositions.push({row, col});
+                            }
+                        }
+                        
+                        // Randomize grid exploration order for more diversity
+                        if (algorithmXRandomize && algorithmXRandomness > 40) {
+                            const randomizationStrength = algorithmXRandomness / 100.0;
+                            if (getRandom() < randomizationStrength * 0.7) {
+                                // Partial shuffle of grid positions
+                                for (let i = gridPositions.length - 1; i > 0; i--) {
+                                    if (getRandom() < randomizationStrength * 0.6) {
+                                        const j = Math.floor(getRandom() * (i + 1));
+                                        [gridPositions[i], gridPositions[j]] = [gridPositions[j], gridPositions[i]];
+                                    }
+                                }
+                            }
+                        }
+                        
+                        for (const {row, col} of gridPositions) {
+                            if (canPlacePiece(pieceName, row, col)) {
+                                placements.push({
+                                    piece: pieceName,
+                                    row: row,
+                                    col: col,
+                                    rotation: rotation * 90,
+                                    flipped: flipped === 1
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Apply more aggressive randomization to placements order if enabled
+            if (algorithmXRandomize && algorithmXRandomness > 0) {
+                const randomizationStrength = algorithmXRandomness / 100.0;
+                
+                // More aggressive shuffling for higher randomness levels
+                if (randomizationStrength > 0.3) {
+                    // Full Fisher-Yates shuffle for high randomization
+                    for (let i = placements.length - 1; i > 0; i--) {
+                        if (getRandom() < randomizationStrength * 0.8) {
+                            const j = Math.floor(getRandom() * (i + 1));
+                            [placements[i], placements[j]] = [placements[j], placements[i]];
+                        }
+                    }
+                } else {
+                    // Light local shuffling for low randomization
+                    const numSwaps = Math.floor(placements.length * randomizationStrength * 0.2);
+                    for (let i = 0; i < numSwaps; i++) {
+                        const idx1 = Math.floor(getRandom() * placements.length);
+                        const maxDistance = Math.min(20, Math.floor(placements.length * 0.1));
+                        const idx2 = Math.max(0, Math.min(placements.length - 1, 
+                            idx1 + Math.floor((getRandom() - 0.5) * maxDistance * 2)));
+                        if (idx1 !== idx2) {
+                            [placements[idx1], placements[idx2]] = [placements[idx2], placements[idx1]];
+                        }
+                    }
+                }
+            }
+            
+            // Create exact cover matrix
+            const matrix = [];
+            
+            for (const placement of placements) {
+                const row = new Array(totalConstraints).fill(0);
+                
+                // Mark piece constraint
+                row[pieceConstraints.get(placement.piece)] = 1;
+                
+                // Mark cell constraints
+                pieceRotations[placement.piece] = placement.rotation;
+                pieceFlipped[placement.piece] = placement.flipped;
+                
+                const shape = getTransformedShape(placement.piece);
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const gridRow = placement.row + r;
+                            const gridCol = placement.col + c;
+                            const cellKey = `${gridRow},${gridCol}`;
+                            
+                            if (cellConstraints.has(cellKey)) {
+                                row[cellConstraints.get(cellKey)] = 1;
+                            }
+                        }
+                    }
+                }
+                
+                matrix.push(row);
+            }
+            
+            return { matrix, placements };
+        }
+
+        async function searchWithVisualization(dl, placements) {
+            const startTime = Date.now();
+            let lastUpdate = startTime;
+            const maxRuntime = algorithmXRandomness > 50 ? 60000 : 120000; // Shorter timeout for high randomization
+            
+            return await searchRecursive(dl, placements, 0);
+            
+            async function searchRecursive(dl, placements, depth) {
+                if (!solverRunning) return false;
+                
+                // Check for timeout and depth limits
+                const elapsed = Date.now() - startTime;
+                if (elapsed > maxRuntime) {
+                    console.log(`Solver timeout after ${elapsed}ms`);
+                    return false;
+                }
+                
+                // Prevent excessive depth when randomization is high
+                const maxDepth = algorithmXRandomness > 70 ? 50000 : 100000;
+                if (depth > maxDepth) {
+                    console.log(`Max depth ${maxDepth} reached`);
+                    return false;
+                }
+                
+                // Update stats periodically (if enabled and less frequently if high randomization)
+                if (updateStats) {
+                    const updateInterval = algorithmXRandomness > 50 ? 200 : 100; // Slower updates for high randomization
+                    const now = Date.now();
+                    if (now - lastUpdate > updateInterval) {
+                        solverStats.attempts = depth;
+                        solverStats.coverOperations = dl.operations;
+                        solverStats.placed = dl.solution.length;
+                        updateSolverUI();
+                        lastUpdate = now;
+                    }
+                }
+                
+                // Add visualization delay only if visualization is enabled
+                if (showVisualization && updateStats) {
+                    const visualizationDelay = algorithmXRandomness > 50 ? 
+                        Math.max(1, solverSpeed / 20) : Math.max(1, solverSpeed / 10);
+                    await new Promise(resolve => {
+                        solverTimeout = setTimeout(resolve, visualizationDelay);
+                    });
+                } else if (depth % 1000 === 0) {
+                    // Minimal delay every 1000 iterations to keep UI responsive even when disabled
+                    await new Promise(resolve => {
+                        solverTimeout = setTimeout(resolve, 1);
+                    });
+                }
+                
+                if (dl.header.right === dl.header) {
+                    // Found a solution - always display it regardless of visualization settings
+                    displayAlgorithmXSolution(dl.solution, placements);
+                    return true;
+                }
+                
+                const col = dl.selectColumnHeuristic();
+                if (!col || col.size === 0) {
+                    return false;
+                }
+                
+                dl.cover(col);
+                
+                // Collect all rows in this column
+                const rows = [];
+                let row = col.down;
+                while (row !== col) {
+                    rows.push(row);
+                    row = row.down;
+                }
+                
+                // Apply randomization based on user settings
+                if (algorithmXRandomize && algorithmXRandomness > 0 && rows.length > 1) {
+                    const randomizationStrength = algorithmXRandomness / 100.0;
+                    
+                    if (randomizationStrength > 0.6) {
+                        // High randomization: Full Fisher-Yates shuffle
+                        for (let i = rows.length - 1; i > 0; i--) {
+                            const j = Math.floor(getRandom() * (i + 1));
+                            [rows[i], rows[j]] = [rows[j], rows[i]];
+                        }
+                    } else if (randomizationStrength > 0.3) {
+                        // Medium randomization: Partial shuffle
+                        const numSwaps = Math.floor(rows.length * randomizationStrength);
+                        for (let i = 0; i < numSwaps; i++) {
+                            const idx1 = Math.floor(getRandom() * rows.length);
+                            const idx2 = Math.floor(getRandom() * rows.length);
+                            if (idx1 !== idx2) {
+                                [rows[idx1], rows[idx2]] = [rows[idx2], rows[idx1]];
+                            }
+                        }
+                    } else if (randomizationStrength > 0.1) {
+                        // Low randomization: Adjacent swaps only
+                        const maxSwaps = Math.min(3, Math.floor(rows.length * 0.3));
+                        for (let i = 0; i < maxSwaps; i++) {
+                            const idx1 = Math.floor(getRandom() * (rows.length - 1));
+                            const idx2 = idx1 + 1;
+                            [rows[idx1], rows[idx2]] = [rows[idx2], rows[idx1]];
+                        }
+                    }
+                }
+                
+                // Try each row
+                for (const currentRow of rows) {
+                    if (!solverRunning) return false;
+                    
+                    dl.solution.push(currentRow.row);
+                    
+                    // Visualize current partial solution (if enabled and less frequently if high randomization)
+                    if (showVisualization) {
+                        const shouldVisualize = algorithmXRandomness > 50 ? 
+                            (dl.solution.length <= 8 && depth % 10 === 0) : // Only every 10th attempt if high randomization
+                            (dl.solution.length <= 12); // Normal visualization
+                        
+                        if (shouldVisualize) {
+                            displayPartialAlgorithmXSolution(dl.solution, placements);
+                        }
+                    }
+                    
+                    // Cover all other columns in this row
+                    let node = currentRow.right;
+                    while (node !== currentRow) {
+                        dl.cover(node.header);
+                        node = node.right;
+                    }
+                    
+                    if (await searchRecursive(dl, placements, depth + 1)) {
+                        return true;
+                    }
+                    
+                    // Backtrack
+                    dl.solution.pop();
+                    solverStats.backtracks++;
+                    
+                    // Uncover all columns in this row
+                    node = currentRow.left;
+                    while (node !== currentRow) {
+                        dl.uncover(node.header);
+                        node = node.left;
+                    }
+                }
+                
+                dl.uncover(col);
+                return false;
+            }
+        }
+
+        function displayAlgorithmXSolution(solution, placements) {
+            resetPuzzle();
+            
+            for (const placementIndex of solution) {
+                const placement = placements[placementIndex];
+                if (placement) {
+                    pieceRotations[placement.piece] = placement.rotation;
+                    pieceFlipped[placement.piece] = placement.flipped;
+                    
+                    placePiece(placement.piece, placement.row, placement.col);
+                    const pieceElement = document.querySelector(`.piece[data-name="${placement.piece}"]`);
+                    if (pieceElement) {
+                        pieceElement.style.display = 'none';
+                    }
+                }
+            }
+            
+            solverStats.placed = solution.length;
+        }
+
+        function displayPartialAlgorithmXSolution(solution, placements) {
+            // Only update if solution is reasonable size
+            if (solution.length > 12) return;
+            
+            resetPuzzle();
+            
+            for (const placementIndex of solution) {
+                const placement = placements[placementIndex];
+                if (placement) {
+                    pieceRotations[placement.piece] = placement.rotation;
+                    pieceFlipped[placement.piece] = placement.flipped;
+                    
+                    if (canPlacePiece(placement.piece, placement.row, placement.col)) {
+                        placePiece(placement.piece, placement.row, placement.col);
+                        const pieceElement = document.querySelector(`.piece[data-name="${placement.piece}"]`);
+                        if (pieceElement) {
+                            pieceElement.style.display = 'none';
+                        }
+                    }
+                }
+            }
+            
+            solverStats.placed = solution.length;
+        }
+
+        // Initialize the puzzle when the page loads
+        document.addEventListener('DOMContentLoaded', initializePuzzle);
+    </script>
+</body>
+</html>
